@@ -11,7 +11,8 @@ export class WhatsAppService {
       auth: state,
       browser: ['Oula Gateway', 'Chrome', '10.15.7'],
       markOnlineOnConnect: false,
-      syncFullHistory: false
+      syncFullHistory: false,
+      logger: logger.child({ level: 'error' })
     })
 
     sock.ev.on('creds.update', saveCreds)
@@ -23,7 +24,7 @@ export class WhatsAppService {
     return await qrcode.toDataURL(qrData)
   }
 
-  static setupConnectionHandler(sock, sessionKey, onUpdate) {
+  static setupConnectionHandler(sock, sessionKey, onUpdate, onReconnect) {
     sock.ev.on('connection.update', async (update) => {
       const { connection, qr, lastDisconnect } = update
       
@@ -32,6 +33,7 @@ export class WhatsAppService {
       let status = null
       let qrCode = null
       let phone = null
+      let shouldReconnect = false
 
       if (qr) {
         qrCode = await this.generateQR(qr)
@@ -47,12 +49,19 @@ export class WhatsAppService {
 
       if (connection === 'close') {
         status = 'disconnected'
-        const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401
+        shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401
         logger.warn(`Disconnected ${sessionKey}, should reconnect: ${shouldReconnect}`)
+        
+        if (shouldReconnect && onReconnect) {
+          setTimeout(() => {
+            logger.info(`Attempting reconnection for ${sessionKey}`)
+            onReconnect(sessionKey)
+          }, 1000)
+        }
       }
 
       if (onUpdate) {
-        onUpdate({ status, qrCode, phone, connection, lastDisconnect })
+        onUpdate({ status, qrCode, phone, connection, lastDisconnect, shouldReconnect })
       }
     })
   }

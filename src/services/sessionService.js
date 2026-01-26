@@ -11,6 +11,10 @@ class SessionService {
       return this.sessions.get(sessionKey)
     }
 
+    return await this.createNewSession(sessionKey)
+  }
+
+  async createNewSession(sessionKey) {
     const sock = await WhatsAppService.createSocket(sessionKey)
     
     const session = {
@@ -23,20 +27,42 @@ class SessionService {
 
     this.sessions.set(sessionKey, session)
 
-    WhatsAppService.setupConnectionHandler(sock, sessionKey, (update) => {
-      this.updateSession(sessionKey, update)
-    })
+    WhatsAppService.setupConnectionHandler(
+      sock, 
+      sessionKey, 
+      (update) => this.updateSession(sessionKey, update),
+      (sessionKey) => this.reconnectSession(sessionKey)
+    )
 
     return session
   }
 
-  updateSession(sessionKey, { status, qrCode, phone }) {
+  async reconnectSession(sessionKey) {
+    const session = this.sessions.get(sessionKey)
+    if (!session) return
+
+    if (session.reconnectAttempts >= 3) {
+      logger.error(`Max reconnection attempts reached for ${sessionKey}`)
+      return
+    }
+
+    session.reconnectAttempts++
+    logger.info(`Reconnecting ${sessionKey}, attempt ${session.reconnectAttempts}/3`)
+    
+    // Crear nueva sesión
+    await this.createNewSession(sessionKey)
+  }
+
+  updateSession(sessionKey, { status, qrCode, phone, shouldReconnect }) {
     const session = this.sessions.get(sessionKey)
     if (!session) return
 
     if (status) session.status = status
     if (qrCode) session.lastQr = qrCode
-    if (phone) session.phone = phone
+    if (phone) {
+      session.phone = phone
+      session.reconnectAttempts = 0 // Reset attempts on successful connection
+    }
 
     this.sessions.set(sessionKey, session)
   }
