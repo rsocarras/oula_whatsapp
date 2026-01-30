@@ -9,10 +9,10 @@ export class WhatsAppService {
 
     const sock = makeWASocket({
       auth: state,
-      browser: ['Oula Gateway', 'Chrome', '10.15.7'],
-      markOnlineOnConnect: false,
-      syncFullHistory: false,
-      logger: logger.child({ level: 'error' })
+      // browser: ['Oula Gateway', 'Chrome', '10.15.7'],
+      // markOnlineOnConnect: false,
+      // syncFullHistory: false,
+      // logger: logger.child({ level: 'error' })
     })
 
     sock.ev.on('creds.update', saveCreds)
