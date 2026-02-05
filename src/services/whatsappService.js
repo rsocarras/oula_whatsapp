@@ -49,13 +49,12 @@ export class WhatsAppService {
 
       if (connection === 'close') {
         status = 'disconnected'
-        console.log(`-------------------------------------- Disconnected ${JSON.stringify(lastDisconnect)}`)
-        shouldReconnect = lastDisconnect?.error?.output?.statusCode == 515
+        shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401
         logger.warn(`Disconnected ${sessionKey}, should reconnect: ${shouldReconnect}`)
         
         if (shouldReconnect && onReconnect) {
           setTimeout(() => {
-            logger.info(`Checking if should reconnect ${sessionKey}`)
+            logger.info(`Attempting reconnection for ${sessionKey}`)
             onReconnect(sessionKey)
           }, 1000)
         }
