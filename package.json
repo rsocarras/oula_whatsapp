@@ -16,6 +16,8 @@
     "@whiskeysockets/baileys": "^7.0.0-rc.9",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "lru-cache": "^11.2.5",
+    "node-cron": "^4.2.1",
     "qrcode": "^1.5.4"
   }
 }
